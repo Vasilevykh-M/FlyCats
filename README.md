@@ -66,8 +66,8 @@ Copy
 Склонируйте репозиторий на ваш компьютер:
 
 ```bash
-git clone https://github.com/yourusername/opengl-scene.git
-cd opengl-scene
+git clone https://github.com/Vasilevykh-M/FlyCats.git
+cd FlyCats
 ```
 
 ### 2. Установите зависимости
@@ -96,7 +96,8 @@ make
 После успешной сборки запустите программу:
 
 ```bash
-./OpenGLExample
+cd ..
+./run.sh
 ```
 
 ### Управление
