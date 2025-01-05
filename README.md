@@ -1,4 +1,4 @@
-# OpenGL 3D Scene with Landscape, Models, and Skybox
+# FlyCats
 
 Этот проект представляет собой 3D-сцену, созданную с использованием OpenGL. В проекте реализованы следующие возможности:
 
