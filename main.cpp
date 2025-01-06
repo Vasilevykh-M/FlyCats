@@ -15,7 +15,6 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-// Шейдерные программы
 const char* vertexShaderSource = R"(
 #version 330 core
 layout (location = 0) in vec3 aPos;
@@ -39,7 +38,7 @@ void main() {
     Normal = mat3(transpose(inverse(model))) * aNormal;
     FragPos = vec3(model * vec4(aPos, 1.0));
 
-    // Вычисление матрицы TBN
+    
     vec3 T = normalize(mat3(model) * aTangent);
     vec3 B = normalize(mat3(model) * aBitangent);
     vec3 N = normalize(mat3(model) * aNormal);
@@ -59,7 +58,7 @@ in mat3 TBN;
 uniform sampler2D texture_diffuse1;
 uniform sampler2D texture_normal1;
 
-uniform bool useNormalMap; // Флаг использования карты нормалей
+uniform bool useNormalMap; 
 
 uniform vec3 lightPos;
 uniform vec3 viewPos;
@@ -69,16 +68,16 @@ uniform vec3 objectColor;
 void main() {
     vec3 normal;
     if (useNormalMap) {
-        // Используем карту нормалей
+        
         normal = texture(texture_normal1, TexCoords).rgb;
-        normal = normalize(normal * 2.0 - 1.0); // Преобразование из [0, 1] в [-1, 1]
-        normal = normalize(TBN * normal);      // Преобразование в мировое пространство
+        normal = normalize(normal * 2.0 - 1.0); 
+        normal = normalize(TBN * normal);      
     } else {
-        // Используем обычные нормали
+        
         normal = normalize(Normal);
     }
 
-    // Освещение
+    
     vec3 lightDir = normalize(lightPos - FragPos);
     vec3 viewDir = normalize(viewPos - FragPos);
     vec3 reflectDir = reflect(-lightDir, normal);
@@ -128,7 +127,6 @@ void main()
 }
 )";
 
-// Функция для загрузки текстур
 unsigned int loadTexture(const char* path) {
     unsigned int textureID;
     glGenTextures(1, &textureID);
@@ -169,7 +167,7 @@ unsigned int loadCubemap(const std::unordered_map<std::string, std::string>& fac
 
     int width, height, nrChannels;
 
-    // Маппинг направлений к константам OpenGL
+    
     std::unordered_map<std::string, GLenum> faceMapping = {
         {"right", GL_TEXTURE_CUBE_MAP_POSITIVE_X},
         {"left", GL_TEXTURE_CUBE_MAP_NEGATIVE_X},
@@ -204,7 +202,6 @@ unsigned int loadCubemap(const std::unordered_map<std::string, std::string>& fac
     return textureID;
 }
 
-// Функция для создания шейдерной программы
 unsigned int createShaderProgram(const char* vertexShaderSource, const char* fragmentShaderSource) {
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
@@ -224,13 +221,6 @@ unsigned int createShaderProgram(const char* vertexShaderSource, const char* fra
 
     return shaderProgram;
 }
-
-// Функция для создания ландшафта с текстурными координатами и нормалями
-struct Vertex {
-    glm::vec3 position;
-    glm::vec2 texCoords;
-    glm::vec3 normal;
-};
 
 std::vector<float> generateVertexTerrain(int* width, int* height, const char* heightMapPath) {
     std::vector<GLfloat> vertices;
@@ -255,7 +245,7 @@ std::vector<float> generateVertexTerrain(int* width, int* height, const char* he
             glm::vec3 pos((GLfloat)x / *width - 0.5f, z, (GLfloat)y / *height - 0.5f);
             glm::vec2 texCoords((GLfloat)x / *width * 8, (GLfloat)y / *height * 8);
 
-            // Вычисление нормалей
+            
             glm::vec3 normal(0.0f, 1.0f, 0.0f);
 
             if (x > 0 && x < *width - 1 && y > 0 && y < *height - 1) {
@@ -287,7 +277,7 @@ std::vector<float> generateVertexTerrain(int* width, int* height, const char* he
 std::vector<unsigned int> generateIndexTerrain(int width, int height) {
     std::vector<unsigned int> indices;
 
-    // Generate indices for triangles
+    
     for (int y = 0; y < height - 1; ++y) {
         for (int x = 0; x < width - 1; ++x) {
             int index = y * width + x;
@@ -306,9 +296,9 @@ std::vector<unsigned int> generateIndexTerrain(int width, int height) {
 class Model {
 public:
     Model(const char* path, unsigned int textureID, unsigned int normalMapID = 0) {
-        this->textureID = textureID; // Основная текстура
-        this->normalMapID = normalMapID; // Карта нормалей
-        this->hasNormalMap = (normalMapID != 0); // Флаг наличия карты нормалей
+        this->textureID = textureID;
+        this->normalMapID = normalMapID;
+        this->hasNormalMap = (normalMapID != 0);
 
         Assimp::Importer importer;
         const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
@@ -321,17 +311,17 @@ public:
     }
 
     void Draw(GLuint shaderProgram) {
-        glActiveTexture(GL_TEXTURE0); // Основная текстура
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textureID);
         glUniform1i(glGetUniformLocation(shaderProgram, "texture_diffuse1"), 0);
 
         if (hasNormalMap) {
-            glActiveTexture(GL_TEXTURE1); // Карта нормалей
+            glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, normalMapID);
             glUniform1i(glGetUniformLocation(shaderProgram, "texture_normal1"), 1);
         }
 
-        glUniform1i(glGetUniformLocation(shaderProgram, "useNormalMap"), hasNormalMap); // Передаем флаг в шейдер
+        glUniform1i(glGetUniformLocation(shaderProgram, "useNormalMap"), hasNormalMap);
 
         for (auto& mesh : meshes) {
             mesh.Draw(shaderProgram);
@@ -339,15 +329,15 @@ public:
     }
 
 private:
-    bool hasNormalMap; // Флаг наличия карты нормалей
-    unsigned int textureID; // Основная текстура
-    unsigned int normalMapID; // Карта нормалей
+    bool hasNormalMap;
+    unsigned int textureID;
+    unsigned int normalMapID;
     struct Vertex {
-        glm::vec3 position;  // Позиция вершины
-        glm::vec2 texCoords; // Текстурные координаты (UV)
-        glm::vec3 normal;    // Нормаль
-        glm::vec3 tangent;   // Касательный вектор
-        glm::vec3 bitangent; // Битангентный вектор
+        glm::vec3 position;
+        glm::vec2 texCoords;
+        glm::vec3 normal;
+        glm::vec3 tangent;
+        glm::vec3 bitangent;
     };
 
     struct Mesh {
@@ -374,32 +364,32 @@ private:
 
             glBindVertexArray(VAO);
 
-            // Привязка VBO
+            
             glBindBuffer(GL_ARRAY_BUFFER, VBO);
             glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW);
 
-            // Привязка EBO
+            
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
 
-            // Настройка атрибутов вершин
-            // Атрибут 0: Позиция
+            
+            
             glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
             glEnableVertexAttribArray(0);
 
-            // Атрибут 1: Текстурные координаты (UV)
+            
             glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoords));
             glEnableVertexAttribArray(1);
 
-            // Атрибут 2: Нормали
+            
             glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
             glEnableVertexAttribArray(2);
 
-            // Атрибут 3: Касательный вектор
+            
             glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tangent));
             glEnableVertexAttribArray(3);
 
-            // Атрибут 4: Битангентный вектор
+            
             glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, bitangent));
             glEnableVertexAttribArray(4);
 
@@ -426,48 +416,48 @@ private:
         std::vector<Vertex> vertices;
         std::vector<unsigned int> indices;
 
-        // Обработка вершин
+        
         for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
             Vertex vertex;
 
-            // Позиция вершины
+            
             vertex.position.x = mesh->mVertices[i].x;
             vertex.position.y = mesh->mVertices[i].y;
             vertex.position.z = mesh->mVertices[i].z;
 
-            // Нормали
+            
             if (mesh->HasNormals()) {
                 vertex.normal.x = mesh->mNormals[i].x;
                 vertex.normal.y = mesh->mNormals[i].y;
                 vertex.normal.z = mesh->mNormals[i].z;
             } else {
-                vertex.normal = glm::vec3(0.0f, 0.0f, 0.0f); // Если нормали отсутствуют
+                vertex.normal = glm::vec3(0.0f, 0.0f, 0.0f); 
             }
 
-            // Текстурные координаты
-            if (mesh->mTextureCoords[0]) { // Проверяем, есть ли UV-координаты
+            
+            if (mesh->mTextureCoords[0]) { 
                 vertex.texCoords.x = mesh->mTextureCoords[0][i].x;
                 vertex.texCoords.y = mesh->mTextureCoords[0][i].y;
             } else {
-                vertex.texCoords = glm::vec2(0.0f, 0.0f); // Если UV-координаты отсутствуют
+                vertex.texCoords = glm::vec2(0.0f, 0.0f); 
             }
 
-            // Инициализация касательных и битангентных векторов
+            
             vertex.tangent = glm::vec3(0.0f);
             vertex.bitangent = glm::vec3(0.0f);
 
             vertices.push_back(vertex);
         }
 
-        // Обработка индексов и вычисление касательных/битангентных векторов
+        
         for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
             aiFace face = mesh->mFaces[i];
             for (unsigned int j = 0; j < face.mNumIndices; j++) {
                 indices.push_back(face.mIndices[j]);
             }
 
-            // Вычисление касательных и битангентных векторов
-            if (face.mNumIndices == 3) { // Только для треугольников
+            
+            if (face.mNumIndices == 3) { 
                 Vertex& v0 = vertices[face.mIndices[0]];
                 Vertex& v1 = vertices[face.mIndices[1]];
                 Vertex& v2 = vertices[face.mIndices[2]];
@@ -502,7 +492,7 @@ private:
             }
         }
 
-        // Нормализация касательных и битангентных векторов
+        
         for (auto& vertex : vertices) {
             vertex.tangent = glm::normalize(vertex.tangent);
             vertex.bitangent = glm::normalize(vertex.bitangent);
@@ -512,10 +502,10 @@ private:
     }
 };
 
-// Главная функция
+
 int main() {
 
-    // Использование переменных окружения
+    
     std::string landscapeTexturePath = std::getenv("LANDSCAPE_TEXTURE_PATH");
     std::string heightMapPath = std::getenv("HEIGHT_MAP_PATH");
 
@@ -562,26 +552,26 @@ int main() {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    // Создание шейдерной программы для ландшафта
+    
     unsigned int landscapeShaderProgram = createShaderProgram(vertexShaderSource, fragmentShaderSource);
     glUseProgram(landscapeShaderProgram);
 
-    // Создание шейдерной программы для скайбокса
+    
     unsigned int skyboxShaderProgram = createShaderProgram(skyboxVertexShaderSource, skyboxFragmentShaderSource);
     glUseProgram(skyboxShaderProgram);
 
-    // Загрузка текстуры ландшафта
+    
     unsigned int landscapeTexture = loadTexture(landscapeTexturePath.c_str());
 
     unsigned int skyboxTexture = loadCubemap(faces);
 
-    // Генерация ландшафта
+    
     int terrainWidth;
     int terrainHeight;
     std::vector<float> vertices = generateVertexTerrain(&terrainWidth, &terrainHeight, heightMapPath.c_str());
     std::vector<unsigned int> indices = generateIndexTerrain(terrainWidth, terrainHeight);
 
-    // Создание VAO, VBO для ландшафта
+    
     unsigned int landscapeVAO, landscapeVBO, landscapeEBO;
     glGenVertexArrays(1, &landscapeVAO);
     glGenBuffers(1, &landscapeVBO);
@@ -595,19 +585,19 @@ int main() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, landscapeEBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 
-    // Позиция
+    
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    // Текстурные координаты
+    
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    // Нормали
+    
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
     glEnableVertexAttribArray(2);
 
-    // Создание VAO, VBO для скайбокса
+    
     unsigned int skyboxVAO, skyboxVBO;
     glGenVertexArrays(1, &skyboxVAO);
     glGenBuffers(1, &skyboxVBO);
@@ -670,7 +660,7 @@ int main() {
 
     Model ourModel3(model3Path.c_str(), loadTexture(model3TexturePath.c_str()));
 
-    // Настройка камеры
+    
     glm::vec3 cameraPos = glm::vec3(0.0f, 5.0f, 10.0f);
     glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
     glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -680,18 +670,18 @@ int main() {
     float lastX = 400, lastY = 300;
     float cameraSpeed = 0.05f;
 
-    // Настройка проекции
+    
     glm::mat4 projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
 
-    // Настройка освещения
+    
     glm::vec3 lightPos(1.0f, 1.0f, 1.0f);
     glm::vec3 viewPos = cameraPos;
     glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
     glm::vec3 objectColor(1.0f, 1.0f, 1.0f);
     glEnable(GL_DEPTH_TEST);
-    // Цикл обработки событий
+    
     while (!glfwWindowShouldClose(window)) {
-        // Обработка ввода
+        
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
             glfwSetWindowShouldClose(window, true);
 
@@ -704,11 +694,11 @@ int main() {
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
             cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 
-        // Обработка мыши для поворота камеры
+        
         double xpos, ypos;
         glfwGetCursorPos(window, &xpos, &ypos);
         float xoffset = xpos - lastX;
-        float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+        float yoffset = lastY - ypos; 
         lastX = xpos;
         lastY = ypos;
 
@@ -730,19 +720,19 @@ int main() {
         front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
         cameraFront = glm::normalize(front);
 
-        // Настройка вида
+        
         glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-        // Очистка буферов
+        
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // Рисование ландшафта
+        
         glUseProgram(landscapeShaderProgram);
         glm::mat4 landscapeModel = glm::mat4(1.0f);
         glUniformMatrix4fv(glGetUniformLocation(landscapeShaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(landscapeModel));
         glUniformMatrix4fv(glGetUniformLocation(landscapeShaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(glGetUniformLocation(landscapeShaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
-        // Установка параметров освещения
+        
         glUniform3f(glGetUniformLocation(landscapeShaderProgram, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
         glUniform3f(glGetUniformLocation(landscapeShaderProgram, "viewPos"), cameraPos.x, cameraPos.y, cameraPos.z);
         glUniform3f(glGetUniformLocation(landscapeShaderProgram, "lightColor"), lightColor.x, lightColor.y, lightColor.z);
@@ -753,33 +743,33 @@ int main() {
         glBindVertexArray(landscapeVAO);
         glDrawElements(GL_TRIANGLES, terrainWidth * terrainHeight * 6, GL_UNSIGNED_INT, NULL);
 
-        // Рисование модели
+        
         glm::mat4 model1 = glm::mat4(1.0f);
-        model1 = glm::translate(model1, glm::vec3(0.0f, 0.125f, 0.0f)); // Позиция модели на плоскости
-        model1 = glm::scale(model1, glm::vec3(0.005f)); // Масштабирование модели
-        model1 = glm::rotate(model1, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); // Поворот модели на 90 градусов по оси Z
+        model1 = glm::translate(model1, glm::vec3(0.0f, 0.125f, 0.0f)); 
+        model1 = glm::scale(model1, glm::vec3(0.005f)); 
+        model1 = glm::rotate(model1, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); 
         glUniformMatrix4fv(glGetUniformLocation(landscapeShaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model1));
         ourModel1.Draw(landscapeShaderProgram);
 
-        // Рисование модели
+        
         glm::mat4 model2 = glm::mat4(1.0f);
-        model2 = glm::translate(model2, glm::vec3(-0.125f, 0.125f, 0.0f)); // Позиция модели на плоскости
-        model2 = glm::scale(model2, glm::vec3(0.005f)); // Масштабирование модели
-        model2 = glm::rotate(model2, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); // Поворот модели на 90 градусов по оси Z
-        model2 = glm::rotate(model2, glm::radians(-90.0f), glm::vec3(0.0f, 0.0f, 1.0f)); // Поворот модели на 90 градусов по оси Z
+        model2 = glm::translate(model2, glm::vec3(-0.125f, 0.125f, 0.0f)); 
+        model2 = glm::scale(model2, glm::vec3(0.005f)); 
+        model2 = glm::rotate(model2, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); 
+        model2 = glm::rotate(model2, glm::radians(-90.0f), glm::vec3(0.0f, 0.0f, 1.0f)); 
         glUniformMatrix4fv(glGetUniformLocation(landscapeShaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model2));
         ourModel2.Draw(landscapeShaderProgram);
 
-        // Рисование модели
+        
         glm::mat4 model3 = glm::mat4(1.0f);
-        model3 = glm::translate(model3, glm::vec3(0.125f, 0.125f, 0.0f)); // Позиция модели на плоскости
-        model3 = glm::scale(model3, glm::vec3(0.0051f)); // Масштабирование модели
-        model3 = glm::rotate(model3, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); // Поворот модели на 90 градусов по оси Z
+        model3 = glm::translate(model3, glm::vec3(0.125f, 0.125f, 0.0f)); 
+        model3 = glm::scale(model3, glm::vec3(0.0051f)); 
+        model3 = glm::rotate(model3, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); 
         glUniformMatrix4fv(glGetUniformLocation(landscapeShaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model3));
         ourModel3.Draw(landscapeShaderProgram);
 
-        // Рисование скайбокса
-        glDepthFunc(GL_LEQUAL); // изменение функции сравнения глубины для корректного отображения скайбокса
+        
+        glDepthFunc(GL_LEQUAL); 
         glUseProgram(skyboxShaderProgram);
         glUniformMatrix4fv(glGetUniformLocation(skyboxShaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(glGetUniformLocation(skyboxShaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(glm::mat4(glm::mat3(view))));
@@ -787,14 +777,14 @@ int main() {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture);
         glDrawArrays(GL_TRIANGLES, 0, 36);
-        glDepthFunc(GL_LESS); // восстановление функции сравнения глубины
+        glDepthFunc(GL_LESS); 
 
-        // Обработка событий
+        
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
-    // Освобождение ресурсов
+    
     glDeleteVertexArrays(1, &landscapeVAO);
     glDeleteBuffers(1, &landscapeVBO);
     glDeleteVertexArrays(1, &skyboxVAO);
