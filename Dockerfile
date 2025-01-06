@@ -33,6 +33,8 @@ WORKDIR /app
 # Создаем директорию для сборки
 RUN mkdir build && cd build && cmake .. && make
 
+RUN cd ..
+
 RUN chmod +x run.sh
 
 # Указываем точку входа для запуска программы
